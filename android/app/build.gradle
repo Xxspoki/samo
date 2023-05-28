@@ -71,8 +71,10 @@ android {
    }
    buildTypes {
        release {
-           signingConfig signingConfigs.release
-       }
+        signingConfig signingConfigs.debug
+        shrinkResources false
+        minifyEnabled false
+    }
    }
 
 }

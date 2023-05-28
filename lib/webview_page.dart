@@ -67,7 +67,14 @@ class _WebViewPageState extends State<WebViewPage> {
               children: [
                 InAppWebView(
                   initialUrlRequest: URLRequest(
+                    headers: {},
                     url: Uri.parse('http://www.host1859639.hostland.pro/'),
+                  ),
+                  initialOptions: InAppWebViewGroupOptions(
+                    android: AndroidInAppWebViewOptions(
+                      domStorageEnabled: true,
+                      databaseEnabled: true,
+                    ),
                   ),
                   onWebViewCreated: (controller) {
                     inAppWebViewController = controller;
