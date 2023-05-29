@@ -1,9 +1,10 @@
 // ignore_for_file: unused_field, library_private_types_in_public_api
 
-import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:samo/splash_screen.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class WebViewPage extends StatefulWidget {
   const WebViewPage({Key? key}) : super(key: key);
@@ -13,18 +14,18 @@ class WebViewPage extends StatefulWidget {
 }
 
 class _WebViewPageState extends State<WebViewPage> {
+  final url = 'https://samoschool.store/';
+  late final WebViewController controller;
   double _progress = 0;
   bool _isLoading = true;
-  late InAppWebViewController inAppWebViewController;
-  late GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+  GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
   DateTime? currentBackPressTime;
 
   Future<bool> _handleBackButton() async {
-    final canGoBack = await inAppWebViewController.canGoBack();
-    if (canGoBack) {
-      await inAppWebViewController.goBack();
+    if (await controller.canGoBack()) {
+      await controller.goBack();
       return false;
     } else {
       final now = DateTime.now();
@@ -45,7 +46,7 @@ class _WebViewPageState extends State<WebViewPage> {
       _isLoading = true;
       _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
     });
-    await inAppWebViewController.reload();
+    await controller.reload();
   }
 
   @override
@@ -54,57 +55,62 @@ class _WebViewPageState extends State<WebViewPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshIndicatorKey.currentState?.show();
     });
+    controller = WebViewController()
+      ..setNavigationDelegate(NavigationDelegate(
+        onNavigationRequest: (request) {
+          if (request.url.startsWith(url)) {
+            return NavigationDecision.prevent;
+          }
+          return NavigationDecision.navigate;
+        },
+        onPageStarted: (url) {
+          setState(() {
+            _progress = 0;
+          });
+        },
+        onProgress: (progress) {
+          setState(() {
+            _progress = 100 / progress;
+          });
+        },
+        onPageFinished: (url) {
+          setState(() {
+            _progress = 100;
+          });
+        },
+      ))
+      ..loadRequest(
+        Uri.parse(url),
+      )
+      ..canGoBack();
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _handleBackButton,
+      onWillPop: () => _handleBackButton(),
       child: SafeArea(
         child: Scaffold(
           body: Container(
             color: Colors.white,
             child: Stack(
               children: [
-                InAppWebView(
-                  initialUrlRequest: URLRequest(
-                    url: Uri.parse('https://samoschool.ru/'),
-                  ),
-                  initialOptions: InAppWebViewGroupOptions(
-                    crossPlatform:
-                        InAppWebViewOptions(transparentBackground: true),
-                    android: AndroidInAppWebViewOptions(
-                      domStorageEnabled: true,
-                      databaseEnabled: true,
+                WebViewWidget(
+                  controller: controller,
+                  gestureRecognizers: Set()
+                    ..add(
+                      Factory<VerticalDragGestureRecognizer>(
+                          () => VerticalDragGestureRecognizer()
+                            ..onDown = (DragDownDetails dragDownDetails) {
+                              controller.getScrollPosition().then((value) {
+                                if (value == 0 &&
+                                    dragDownDetails.globalPosition.direction <
+                                        1) {
+                                  controller.reload();
+                                }
+                              });
+                            }),
                     ),
-                  ),
-                  onWebViewCreated: (controller) {
-                    inAppWebViewController = controller;
-                  },
-                  onLoadStart: (controller, url) {
-                    setState(() {
-                      _isLoading = true;
-                    });
-                  },
-                  onLoadStop: (controller, url) {
-                    setState(() {
-                      _isLoading = false;
-                    });
-                    _refreshIndicatorKey.currentState?.deactivate();
-                  },
-                  onProgressChanged: (controller, progress) {
-                    setState(() {
-                      _progress = progress / 100;
-                    });
-                  },
-                  pullToRefreshController: PullToRefreshController(
-                    onRefresh: _handleRefresh,
-                    options: PullToRefreshOptions(
-                      enabled: true,
-                      color: Theme.of(context).primaryColor,
-                      backgroundColor: Colors.transparent,
-                    ),
-                  ),
                 ),
                 Positioned.fill(
                   child: IgnorePointer(
