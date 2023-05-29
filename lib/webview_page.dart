@@ -18,8 +18,6 @@ class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController controller;
   double _progress = 0;
   bool _isLoading = true;
-  GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
-      GlobalKey<RefreshIndicatorState>();
 
   DateTime? currentBackPressTime;
 
@@ -41,20 +39,10 @@ class _WebViewPageState extends State<WebViewPage> {
     }
   }
 
-  Future<void> _handleRefresh() async {
-    setState(() {
-      _isLoading = true;
-      _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
-    });
-    await controller.reload();
-  }
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshIndicatorKey.currentState?.show();
-    });
+
     controller = WebViewController()
       ..setNavigationDelegate(NavigationDelegate(
         onNavigationRequest: (request) {
@@ -66,6 +54,7 @@ class _WebViewPageState extends State<WebViewPage> {
         onPageStarted: (url) {
           setState(() {
             _progress = 0;
+            _isLoading = false;
           });
         },
         onProgress: (progress) {
@@ -100,16 +89,19 @@ class _WebViewPageState extends State<WebViewPage> {
                   gestureRecognizers: Set()
                     ..add(
                       Factory<VerticalDragGestureRecognizer>(
-                          () => VerticalDragGestureRecognizer()
-                            ..onDown = (DragDownDetails dragDownDetails) {
-                              controller.getScrollPosition().then((value) {
+                        () => VerticalDragGestureRecognizer()
+                          ..onDown = (DragDownDetails dragDownDetails) {
+                            controller.getScrollPosition().then(
+                              (value) {
                                 if (value == 0 &&
                                     dragDownDetails.globalPosition.direction <
                                         1) {
                                   controller.reload();
                                 }
-                              });
-                            }),
+                              },
+                            );
+                          },
+                      ),
                     ),
                 ),
                 Positioned.fill(
