@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:samo/splash_screen.dart';
 
 class WebViewPage extends StatefulWidget {
   const WebViewPage({Key? key}) : super(key: key);
@@ -67,10 +68,11 @@ class _WebViewPageState extends State<WebViewPage> {
               children: [
                 InAppWebView(
                   initialUrlRequest: URLRequest(
-                    headers: {},
-                    url: Uri.parse('http://www.host1859639.hostland.pro/'),
+                    url: Uri.parse('https://samoschool.ru/'),
                   ),
                   initialOptions: InAppWebViewGroupOptions(
+                    crossPlatform:
+                        InAppWebViewOptions(transparentBackground: true),
                     android: AndroidInAppWebViewOptions(
                       domStorageEnabled: true,
                       databaseEnabled: true,
@@ -104,16 +106,16 @@ class _WebViewPageState extends State<WebViewPage> {
                     ),
                   ),
                 ),
-                // Positioned.fill(
-                //   child: IgnorePointer(
-                //     ignoring: !_isLoading,
-                //     child: AnimatedOpacity(
-                //       opacity: _isLoading ? 1.0 : 0.0,
-                //       duration: const Duration(milliseconds: 300),
-                //       child: splashScreen(),
-                //     ),
-                //   ),
-                // ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: !_isLoading,
+                    child: AnimatedOpacity(
+                      opacity: _isLoading ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: splashScreen(),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
